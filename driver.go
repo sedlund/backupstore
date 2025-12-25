@@ -22,7 +22,8 @@ type BackupStoreDriver interface {
 	Remove(path string) error               // Behavior like "rm -rf"
 	Read(src string) (io.ReadCloser, error) // Caller needs to close
 	Write(dst string, rs io.ReadSeeker) error
-	List(path string) ([]string, error) // Behavior like "ls", not like "find"
+	List(path string) ([]string, error)          // Behavior like "ls", not like "find"
+	ListRecursive(path string) ([]string, error) // Recursive listing like "find"
 	Upload(src, dst string) error
 	Download(src, dst string) error
 }

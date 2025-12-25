@@ -1494,28 +1494,40 @@ func cleanupBlocks(driver BackupStoreDriver, blockMap map[string]*BlockInfo, vol
 func getBlockNamesForVolume(driver BackupStoreDriver, volumeName string) ([]string, error) {
 	names := []string{}
 	blockPathBase := getBlockPath(volumeName)
-	lv1Dirs, err := driver.List(blockPathBase)
-	// Directory doesn't exist
-	if err != nil {
-		return names, nil
-	}
-	for _, lv1 := range lv1Dirs {
-		lv1Path := filepath.Join(blockPathBase, lv1)
-		lv2Dirs, err := driver.List(lv1Path)
+	if recDriver, ok := driver.(interface {
+		ListRecursive(string) ([]string, error)
+	}); ok {
+		logrus.Infof("Using recursive listing for volume %v", volumeName)
+		allKeys, err := recDriver.ListRecursive(blockPathBase)
 		if err != nil {
 			return nil, err
 		}
-		for _, lv2 := range lv2Dirs {
-			lv2Path := filepath.Join(lv1Path, lv2)
-			blockNames, err := driver.List(lv2Path)
+		// Filter for only .blk files and extract names
+		return util.ExtractNames(allKeys, "", BLK_SUFFIX), nil
+	} else {
+		logrus.Warnf("Driver %v does not support recursive listing, falling back to slow walk", driver.Kind())
+		lv1Dirs, err := driver.List(blockPathBase)
+		// Directory doesn't exist
+		if err != nil {
+			return names, nil
+		}
+		for _, lv1 := range lv1Dirs {
+			lv1Path := filepath.Join(blockPathBase, lv1)
+			lv2Dirs, err := driver.List(lv1Path)
 			if err != nil {
 				return nil, err
 			}
-			names = append(names, blockNames...)
+			for _, lv2 := range lv2Dirs {
+				lv2Path := filepath.Join(lv1Path, lv2)
+				blockNames, err := driver.List(lv2Path)
+				if err != nil {
+					return nil, err
+				}
+				names = append(names, blockNames...)
+			}
 		}
+		return util.ExtractNames(names, "", BLK_SUFFIX), nil
 	}
-
-	return util.ExtractNames(names, "", BLK_SUFFIX), nil
 }
 
 func isFullBackup(config *DeltaBackupConfig) bool {

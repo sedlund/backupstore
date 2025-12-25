@@ -125,6 +125,21 @@ func (f *FileSystemOperator) List(path string) ([]string, error) {
 	return result, nil
 }
 
+func (f *FileSystemOperator) ListRecursive(path string) ([]string, error) {
+    var result []string
+    fullPath := f.LocalPath(path)
+
+    err := filepath.Walk(fullPath, func(p string, info os.FileInfo, err error) error {
+        if err != nil { return err }
+        if !info.IsDir() {
+            rel, _ := filepath.Rel(fullPath, p)
+            result = append(result, rel)
+        }
+        return nil
+    })
+    return result, err
+}
+
 func (f *FileSystemOperator) Upload(src, dst string) error {
 	tmpDst := dst + ".tmp" + "." + strconv.FormatInt(time.Now().UTC().UnixNano(), 10)
 	if f.FileExists(tmpDst) {

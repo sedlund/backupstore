@@ -142,6 +142,30 @@ func (s *BackupStoreDriver) List(listPath string) ([]string, error) {
 	return result, nil
 }
 
+func (s *BackupStoreDriver) ListRecursive(listPath string) ([]string, error) {
+    var result []string
+    path := s.updatePath(listPath)
+    if !strings.HasSuffix(path, "/") {
+        path += "/"
+    }
+
+    // DELAYED pagination loop: Fetch 1,000 objects per API call
+    // Note: Delimiter is REMOVED ("")
+    contents, _, err := s.service.ListObjects(context.Background(), path, "")
+    if err != nil {
+        return nil, err
+    }
+
+    for _, obj := range contents {
+        // Just get the raw key and trim the prefix
+        key := strings.TrimPrefix(*obj.Key, path)
+        if key != "" {
+            result = append(result, key)
+        }
+    }
+    return result, nil
+}
+
 func (s *BackupStoreDriver) FileExists(filePath string) bool {
 	return s.FileSize(filePath) >= 0
 }
