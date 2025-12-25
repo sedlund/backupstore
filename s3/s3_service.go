@@ -133,7 +133,7 @@ func parseAwsError(err error) error {
 }
 
 func (s *service) ListObjects(ctx context.Context, key, delimiter string) ([]types.Object, []types.CommonPrefix, error) {
-	svc, err := s.newInstance(ctx, false)
+	svc, err := s.newInstance(ctx, true)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -165,7 +165,7 @@ func (s *service) ListObjects(ctx context.Context, key, delimiter string) ([]typ
 }
 
 func (s *service) HeadObject(ctx context.Context, key string) (*s3.HeadObjectOutput, error) {
-	svc, err := s.newInstance(ctx, false)
+	svc, err := s.newInstance(ctx, true)
 	if err != nil {
 		return nil, err
 	}
@@ -210,7 +210,7 @@ func (s *service) PutObject(ctx context.Context, key string, reader io.ReadSeeke
 }
 
 func (s *service) GetObject(ctx context.Context, key string) (io.ReadCloser, error) {
-	svc, err := s.newInstance(ctx, false)
+	svc, err := s.newInstance(ctx, true)
 	if err != nil {
 		return nil, err
 	}
@@ -236,7 +236,7 @@ func (s *service) DeleteObjects(ctx context.Context, key string) error {
 		return errors.Wrapf(err, "failed to list objects with prefix %v before removing them", key)
 	}
 
-	svc, err := s.newInstance(ctx, false)
+	svc, err := s.newInstance(ctx, true)
 	if err != nil {
 		return errors.Wrap(err, "failed to get a new s3 client instance before removing objects")
 	}
